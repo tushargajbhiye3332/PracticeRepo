@@ -1,0 +1,44 @@
+name: Branch Name Validation
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  validate-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch naming convention
+        run: |
+          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+          VALID_PREFIXES="^(feature|bugfix|hotfix|release|docs|chore)\/.*$"
+          
+          # Skip validation for protected branches
+          if [[ "$BRANCH_NAME" == "main" ]] || [[ "$BRANCH_NAME" == "dev" ]]; then
+            echo "✓ Protected branch - skipping validation"
+            exit 0
+          fi
+          
+          # Validate branch naming convention
+          if [[ ! "$BRANCH_NAME" =~ $VALID_PREFIXES ]]; then
+            echo "❌ Invalid branch name: $BRANCH_NAME"
+            echo ""
+            echo "Branch names must follow one of these patterns:"
+            echo "  - feature/*   (new features)"
+            echo "  - bugfix/*    (bug fixes)"
+            echo "  - hotfix/*    (urgent fixes)"
+            echo "  - release/*   (release preparation)"
+            echo "  - docs/*      (documentation)"
+            echo "  - chore/*     (maintenance tasks)"
+            echo ""
+            echo "Example: feature/add-user-authentication"
+            exit 1
+          fi
+          
+          echo "✓ Branch name is valid: $BRANCH_NAME"
